@@ -17,3 +17,5 @@ Building on Piz Daint
 4.) Copy "cmakebuild.sh" to your build folder
 5.) source PizDaint_load_modules_v2.sh
 6.) From your build folder, run  "./cmakebuild.sh"
+7.) Hopefully the configuration step went through and you now have a make file
+8.) Build the Calc_Loops executable with "make Calc_Loops"  (note: trying to make everything with "make" fails for me).

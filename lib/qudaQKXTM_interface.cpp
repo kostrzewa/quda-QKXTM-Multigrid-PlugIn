@@ -2101,6 +2101,18 @@ void calc_loops(void **gaugeToPlaquette,
 		performGPU_FT<double>(buf_gen_oneD[idx][mu], gen_oneD[idx][mu], iPrint);
 		performGPU_FT<double>(buf_gen_csvC[idx][mu], gen_csvC[idx][mu], iPrint);
 	      }
+              
+              // ADG: set accumulation arrays to zero after they have been stored in I/O buffers
+              cudaMemset(std_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
+              cudaMemset(gen_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
+              for(int mu = 0; mu < 4 ; mu++){
+                cudaMemset(std_oneD[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
+                cudaMemset(gen_oneD[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
+                cudaMemset(std_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
+                cudaMemset(gen_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
+              }
+              cudaDeviceSynchronize();
+ 
 	      t2 = MPI_Wtime();
 	    printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Loops FFT and copy %f sec\n",msg_str, is, ih, sc, NeV_defl,  t2-t1);
 	  }// Dump conditonal

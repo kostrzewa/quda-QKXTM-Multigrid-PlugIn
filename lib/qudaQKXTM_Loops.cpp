@@ -317,7 +317,7 @@ void naiveLoop(ColorSpinorField &x, ColorSpinorField &b, QudaInvertParam *param,
   Float mceval[2] = {-1.0,0.0};
 
   // b^\dagger \gamma_5 x
-  contract(b, x, ctrnS, QUDA_CONTRACT_GAMMA5);
+  contract(b, x, ctrnS, QUDA_CONTRACT);
   cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
   // accumulate
   if( typeid(Float) == typeid(float) ) {

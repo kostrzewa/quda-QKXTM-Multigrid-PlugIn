@@ -1519,7 +1519,7 @@ void calc_loops(void **gaugeToPlaquette,
   loopInfo.loop_oneD[2] = false;   
   // std-one_derivative
   loopInfo.loop_type[3] = "Loops";  
-  loopInfo.loop_oneD[4] = true;    
+  loopInfo.loop_oneD[3] = true;    
   // std-conserved current
   loopInfo.loop_type[4] = "LoopsCv";
   loopInfo.loop_oneD[4] = true;    

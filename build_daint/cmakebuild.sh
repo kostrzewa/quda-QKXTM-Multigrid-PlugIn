@@ -1,0 +1,65 @@
+#!/bin/bash
+
+cmake -DGIT_EXECUTABLE=/usr/bin/git \
+	-DCMAKE_BUILD_TYPE=DEVEL \
+	-DCMAKE_CUDA_FLAGS_DEBUG="-std c++11 -arch=sm_60 -ftz=true -prec-div=false -prec-sqrt=false -g -DHOST_DEBUG -G" \
+	-DCMAKE_CUDA_FLAGS_RELEASE="-std c++11 -arch=sm_60 -ftz=true -prec-div=false -prec-sqrt=false -O3 -w" \
+	-DCMAKE_INSTALL_PREFIX="/usr/local" \
+	-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cudatoolkit8.0/8.0.61_2.4.9-6.0.7.0_17.1__g899857c \
+	-DCUDA_USE_STATIC_CUDA_RUNTIME=ON \
+	-DCUDA_rt_LIBRARY=/usr/lib64/librt.so \
+	-DMPI_CXX_NO_INTERROGATE=/opt/cray/pe/craype/2.5.15/bin/CC \
+	-DMPI_C_NO_INTERROGATE=/opt/cray/pe/craype/2.5.15/bin/cc \
+	-DQKXTM_2FLAVMG=ON \
+	-DQKXTM_ARPACK=ON \
+	-DQKXTM_ARPACK_LIB=/users/gasbarro/adgBuildK/dependencies/gnu/lib/libarpack.a \
+	-DQKXTM_GSLHOME=/apps/daint/UES/jenkins/6.0.UP07/gpu/easybuild/software/GSL/2.5-CrayGNU-18.08 \
+	-DQKXTM_GSL_LIB=/apps/daint/UES/jenkins/6.0.UP07/gpu/easybuild/software/GSL/2.5-CrayGNU-18.08/lib/libgsl.a \
+	-DQKXTM_HDF5HOME=/opt/cray/pe/hdf5-parallel/1.10.0/GNU/5.1 \
+	-DQKXTM_HDF5_LIB=/opt/cray/pe/hdf5-parallel/1.10.0/GNU/5.1/lib/libhdf5.so \
+	-DQKXTM_LIMEHOME=/users/gasbarro/adgBuildK/dependencies/gnu \
+	-DQKXTM_LIME_LIB=/users/gasbarro/adgBuildK/dependencies/gnu/lib/liblime.a \
+	-DQKXTM_MKL=OFF \
+	-DQKXTM_OPENBLAS=ON \
+	-DQKXTM_OPENBLASHOME=/users/gasbarro/adgBuildK/dependencies/OpenBLAS \
+	-DQKXTM_OPENBLAS_GOMP=/opt/gcc/5.3.0/snos/lib64/libgomp.so \
+	-DQKXTM_OPENBLAS_LIB=/users/gasbarro/adgBuildK/dependencies/OpenBLAS/libopenblas.a \
+	-DQKXTM_OPENBLAS_LIBDIR=/users/gasbarro/adgBuildK/dependencies/OpenBLAS \
+	-DQKXTM_PARPACK_LIB=/users/gasbarro/adgBuildK/dependencies/gnu/lib/libparpack.a \
+	-DQKXTM_QUDA_HOME=/users/gasbarro/adgBuildK/dependencies/quda \
+	-DQUDA_ARPACK=OFF \
+	-DQUDA_BLOCKSOLVER=OFF \
+	-DQUDA_CONTRACT=ON \
+	-DQUDA_DEFLATEDSOLVER=OFF \
+	-DQUDA_DIRAC_CLOVER=ON \
+	-DQUDA_DIRAC_DOMAIN_WALL=OFF \
+	-DQUDA_DIRAC_NDEG_TWISTED_MASS=OFF \
+	-DQUDA_DIRAC_STAGGERED=OFF \
+	-DQUDA_DIRAC_TWISTED_CLOVER=ON \
+	-DQUDA_DIRAC_TWISTED_MASS=ON \
+	-DQUDA_DIRAC_WILSON=ON \
+	-DQUDA_DOWNLOAD_EIGEN=ON \
+	-DQUDA_DYNAMIC_CLOVER=OFF \
+	-DQUDA_FORCE_ASQTAD=OFF \
+	-DQUDA_FORCE_GAUGE=OFF \
+	-DQUDA_FORCE_HISQ=OFF \
+	-DQUDA_GAUGE_ALG=OFF \
+	-DQUDA_GAUGE_TOOLS=OFF \
+	-DQUDA_GITDIR="/users/gasbarro/adgBuildK/quda-QKXTM-Multigrid-PlugIn/.git" \
+	-DQUDA_GPU_ARCH=sm_60 \
+	-DQUDA_INTERFACE_BQCD=OFF \
+	-DQUDA_INTERFACE_CPS=OFF \
+	-DQUDA_INTERFACE_MILC=ON \
+	-DQUDA_INTERFACE_QDP=ON \
+	-DQUDA_INTERFACE_QDPJIT=OFF \
+	-DQUDA_INTERFACE_TIFR=OFF \
+	-DQUDA_LINK_ASQTAD=OFF \
+	-DQUDA_LINK_HISQ=OFF \
+	-DQUDA_MAGMA=OFF \
+	-DQUDA_MPI=ON \
+	-DQUDA_MULTIGRID=ON \
+	-DQUDA_POSIX_THREADS=OFF \
+	-DQUDA_QDPJIT=OFF \
+	-DQUDA_QIO=OFF \
+	-DQUDA_QMP=OFF \
+	./..

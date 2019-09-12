@@ -292,6 +292,46 @@ Loop_w_One_Der_FullOp_Exact(int n, QudaInvertParam *param,
   checkCudaError();
 }
 
+// Computes simple stochastic loop, ADG 25/2/19
+template<typename Float>
+void naiveLoop(ColorSpinorField &x, ColorSpinorField &b, QudaInvertParam *param, void *cnRes_nai){
+
+  void *h_ctrn, *ctrnS;
+  if((cudaMallocHost(&h_ctrn, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("Error allocating memory for contraction results in CPU.\n");
+  cudaMemset(h_ctrn, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+  if((cudaMalloc(&ctrnS, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("Error allocating memory for contraction results in GPU.\n");
+  cudaMemset(ctrnS, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  checkCudaError();
+
+  long int sizeBuffer;
+  sizeBuffer = 
+    sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+
+  int NN = 16*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+  int incx = 1;
+  int incy = 1;
+  Float pceval[2] = {1.0,0.0};
+  Float mceval[2] = {-1.0,0.0};
+
+  // b^\dagger \gamma_5 x
+  contract(b, x, ctrnS, QUDA_CONTRACT);
+  cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
+  // accumulate
+  if( typeid(Float) == typeid(float) ) {
+    cblas_caxpy(NN, (float*) pceval, (float*) h_ctrn, incx, (float*) cnRes_nai, incy);
+  }
+  else if( typeid(Float) == typeid(double) ) {
+    cblas_zaxpy(NN, (double*) pceval, (double*) h_ctrn, incx, (double*) cnRes_nai, incy);
+  }  
+  cudaDeviceSynchronize();
+
+  cudaFreeHost(h_ctrn);
+  cudaFree(ctrnS);
+  checkCudaError();
+}
 
 template<typename Float>
 void oneEndTrick_w_One_Der(ColorSpinorField &x, ColorSpinorField &tmp3, 
@@ -593,7 +633,7 @@ void getLoopWriteBuf_HighMomForm(Float *writeBuf, Float *loopBuf, int iPrint, in
 
 //-C.K: Funtion to write the loops in HDF5 format (Standard Momenta Form)
 template<typename Float>
-void writeLoops_HDF5_StrdMomForm(Float *buf_std_uloc, Float *buf_gen_uloc, 
+void writeLoops_HDF5_StrdMomForm(Float *buf_nai_uloc, Float *buf_std_uloc, Float *buf_gen_uloc, 
 				 Float **buf_std_oneD, Float **buf_std_csvC, 
 				 Float **buf_gen_oneD, Float **buf_gen_csvC, 
 				 char *file_pref, 
@@ -645,11 +685,11 @@ void writeLoops_HDF5_StrdMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 
       if(!exact_loop){
 	char *group2_tag;
-	asprintf(&group2_tag,"Nstoch_%04d",(iPrint+1)*Ndump);
+	asprintf(&group2_tag,"nstoch_%04d",(iPrint+1)*Ndump);
 	group2_id = H5Gcreate(group1_id, group2_tag, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
 
-      for(int it=0;it<6;it++){
+      for(int it=0;it<7;it++){
 	char *group3_tag;
 	asprintf(&group3_tag,"%s",loopInfo.loop_type[it]);
 
@@ -693,6 +733,7 @@ void writeLoops_HDF5_StrdMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 	    }//-mu
 	  }//-if
 	  else{
+            if(strcmp(loopInfo.loop_type[it],"Naive")==0)  loopBuf = buf_nai_uloc;
 	    if(strcmp(loopInfo.loop_type[it],"Scalar")==0) loopBuf = buf_std_uloc;
 	    if(strcmp(loopInfo.loop_type[it],"dOp")==0)    loopBuf = buf_gen_uloc;
 
@@ -729,7 +770,7 @@ void writeLoops_HDF5_StrdMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 
 //-C.K: Funtion to write the loops in HDF5 format (High Momenta Form)
 template<typename Float>
-void writeLoops_HDF5_HighMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
+void writeLoops_HDF5_HighMomForm(Float *buf_nai_uloc, Float *buf_std_uloc, Float *buf_gen_uloc,
                                  Float **buf_std_oneD, Float **buf_std_csvC,
                                  Float **buf_gen_oneD, Float **buf_gen_csvC,
                                  char *file_pref,
@@ -781,11 +822,11 @@ void writeLoops_HDF5_HighMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 
     if(!exact_loop){
       char *group2_tag;
-      asprintf(&group2_tag,"Nstoch_%04d",(iPrint+1)*Ndump);
+      asprintf(&group2_tag,"nstoch_%04d",(iPrint+1)*Ndump);
       group2_id = H5Gcreate(group1_id, group2_tag, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
 
-    for(int it=0;it<6;it++){
+    for(int it=0;it<7;it++){
       char *group3_tag;
       asprintf(&group3_tag,"%s",loopInfo.loop_type[it]);
 
@@ -824,6 +865,7 @@ void writeLoops_HDF5_HighMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 	}//-mu
       }//-if
       else{
+        if(strcmp(loopInfo.loop_type[it],"Naive")==0)  loopBuf = buf_nai_uloc;
 	if(strcmp(loopInfo.loop_type[it],"Scalar")==0) loopBuf = buf_std_uloc;
 	if(strcmp(loopInfo.loop_type[it],"dOp")==0)    loopBuf = buf_gen_uloc;
 
@@ -939,7 +981,7 @@ void writeLoops_HDF5_HighMomForm(Float *buf_std_uloc, Float *buf_gen_uloc,
 
 
 template<typename Float>
-void writeLoops_HDF5(Float *buf_std_uloc, Float *buf_gen_uloc,
+void writeLoops_HDF5(Float *buf_nai_uloc, Float *buf_std_uloc, Float *buf_gen_uloc,
                      Float **buf_std_oneD, Float **buf_std_csvC,
                      Float **buf_gen_oneD, Float **buf_gen_csvC,
                      char *file_pref,
@@ -947,13 +989,13 @@ void writeLoops_HDF5(Float *buf_std_uloc, Float *buf_gen_uloc,
                      bool exact_loop){
 
   if(loopInfo.HighMomForm)
-    writeLoops_HDF5_HighMomForm<double>(buf_std_uloc, buf_gen_uloc,
+    writeLoops_HDF5_HighMomForm<double>(buf_nai_uloc, buf_std_uloc, buf_gen_uloc,
                                         buf_std_oneD, buf_std_csvC,
                                         buf_gen_oneD, buf_gen_csvC,
                                         file_pref, loopInfo,
                                         exact_loop);
   else
-    writeLoops_HDF5_StrdMomForm<double>(buf_std_uloc, buf_gen_uloc,
+    writeLoops_HDF5_StrdMomForm<double>(buf_nai_uloc, buf_std_uloc, buf_gen_uloc,
                                         buf_std_oneD, buf_std_csvC,
                                         buf_gen_oneD, buf_gen_csvC,
                                         file_pref, loopInfo,

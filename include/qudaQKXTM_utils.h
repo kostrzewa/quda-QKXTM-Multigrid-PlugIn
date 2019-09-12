@@ -108,10 +108,10 @@ namespace quda {
     int Nmoms;
     int Qsq = 0;
     FILE_WRITE_FORMAT FileFormat;
-    // = {"Scalar", "dOp", "Loops", "LoopsCv", "LpsDw", "LpsDwCv"}
-    char *loop_type[6];
-    // = { false  , false,  true   , true    ,  true  ,  true}
-    bool loop_oneD[6];
+    // = {"Naive", "Scalar", "dOp", "Loops", "LoopsCv", "LpsDw", "LpsDwCv"}
+    char *loop_type[7];
+    // = {false, false  , false,  true   , true    ,  true  ,  true}
+    bool loop_oneD[7];
     int k_probing;     // if its value <=0 then probing is switched off
     int hadamLow; 
     int hadamHigh;

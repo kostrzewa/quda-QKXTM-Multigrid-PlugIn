@@ -622,12 +622,14 @@ STRING(REGEX REPLACE sm_ "" COMP_CAP ${QUDA_GPU_ARCH})
 SET(COMP_CAP "${COMP_CAP}0")
 add_definitions(-D__COMPUTE_CAPABILITY__=${COMP_CAP})
 
+set(QUDA_ADDITIONAL_NVCC_FLAGS "" CACHE STRING
+    "Some user-configurable NVCC flags" )
 
 # NVCC FLAGS independet off build type
 if(NOT USING_CUDA_LANG_SUPPORT)
-  set(QUDA_NVCC_FLAGS "-std c++11 -arch=${QUDA_GPU_ARCH} -ftz=true -prec-div=false -prec-sqrt=false")
+  set(QUDA_NVCC_FLAGS "${QUDA_ADDITIONAL_NVCC_FLAGS} -std c++11 -arch=${QUDA_GPU_ARCH} -ftz=true -prec-div=false -prec-sqrt=false")
 else()
-  set(QUDA_NVCC_FLAGS "-ftz=true -prec-div=false -prec-sqrt=false")
+  set(QUDA_NVCC_FLAGS "${QUDA_ADDITIONAL_NVCC_FLAGS} -ftz=true -prec-div=false -prec-sqrt=false")
   set(CMAKE_CUDA_FLAGS "-arch=${QUDA_GPU_ARCH}" CACHE STRING "Flags used by the CUDA compiler" FORCE)
 endif()
 

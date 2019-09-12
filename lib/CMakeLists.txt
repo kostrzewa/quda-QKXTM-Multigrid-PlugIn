@@ -244,10 +244,10 @@ endif(QKXTM_MKL)
 # if CUDA_CUDA_LIBRARY (driver api) is not found look for stubs
 FIND_LIBRARY(CUDA_CUDA_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib/ ${CUDA_TOOLKIT_ROOT_DIR}/lib/stubs)
 
-target_link_libraries(QKXTMquda ${CMAKE_THREAD_LIBS_INIT} ${QUDA_LIBS} ${CUDA_CUDA_LIBRARY})
+target_link_libraries(QKXTMquda PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${QUDA_LIBS} ${CUDA_CUDA_LIBRARY})
 
 if(QUDA_QIO)
-  target_link_libraries(QKXTMquda ${QIO_LIB} ${LIME_LIB})
+  target_link_libraries(QKXTMquda PRIVATE ${QIO_LIB} ${LIME_LIB})
 endif()
 
 if(QUDA_QDPJIT)
@@ -255,30 +255,30 @@ if(QUDA_QDPJIT)
 endif()
 
 if(QUDA_QMP)
-  target_link_libraries(QKXTMquda ${QMP_LIB} ${MPI_CXX_LIBRARIES})
+  target_link_libraries(QKXTMquda PRIVATE ${QMP_LIB} ${MPI_CXX_LIBRARIES})
 endif()
 
 if(QUDA_MPI)
-  target_link_libraries(QKXTMquda ${MPI_CXX_LIBRARIES})
+  target_link_libraries(QKXTMquda PRIVATE ${MPI_CXX_LIBRARIES})
 endif()
 
 if(QUDA_MAGMA)
-  target_link_libraries(QKXTMquda ${MAGMA})
+  target_link_libraries(QKXTMquda PRIVATE ${MAGMA})
 endif()
 
 if(QUDA_ARPACK)
-  target_link_libraries(QKXTMquda ${PARPACK_OR_ARPACK})
+  target_link_libraries(QKXTMquda PRIVATE ${PARPACK_OR_ARPACK})
 endif()
 
 if(QUDA_NUMA_NVML)
-target_link_libraries(QKXTMquda ${NVML_LIBRARY})
+  target_link_libraries(QKXTMquda PRIVATE ${NVML_LIBRARY})
 endif()
 
 
 # malloc.cpp uses both the driver and runtime api
 # So we need to find the CUDA_CUDA_LIBRARY (driver api) or the stub version
 find_library(CUDA_CUDA_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib/ ${CUDA_TOOLKIT_ROOT_DIR}/lib/stubs)
-target_link_libraries(QKXTMquda ${CUDA_CUDA_LIBRARY})
+target_link_libraries(QKXTMquda PRIVATE ${CUDA_CUDA_LIBRARY})
 
 # if we did not find Eigen but downloaded it we need to add it as dependency so the download is done first
 if (QUDA_DOWNLOAD_EIGEN)

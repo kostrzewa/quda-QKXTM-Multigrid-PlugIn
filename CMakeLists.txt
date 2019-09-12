@@ -222,6 +222,7 @@ set(CPU_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
 find_package(PythonInterp)
 
 if(${CMAKE_VERSION} VERSION_GREATER 3.7.99)
+  message(STATUS "Running FindCUDAWrapper")
   find_package(CUDAWrapper)
   set(USING_CUDA_LANG_SUPPORT True)
   set(CMAKE_CUDA_STANDARD 11)

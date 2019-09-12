@@ -1436,7 +1436,7 @@ void calc_loops(void **gaugeToPlaquette,
   int Nsc; // number of Spin-Color diluted vectors, if not enabled then it is one
 
   if(k_probing > 0){
-    Nc = 2*pow(2,4*(k_probing-1));
+    Nc = 2*std::pow(2,4*(k_probing-1));
     Vc = hch_coloring(k_probing,4); //4D hierarchical coloring
     isProbing=true;
 

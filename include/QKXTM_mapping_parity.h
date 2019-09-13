@@ -1,6 +1,8 @@
 #ifndef MAPPING_PARITY_H
 #define MAPPING_PARITY_H
 
+#include <QKXTM_util.h>
+
 static int getLatticeCoordinateParity2(int latt_coord, int nx , int ny , int nz)
 {
  	int x2, x3, x4;                 //x / 2, y, z, t normal coordinates on even/odd latice                                                                     
@@ -245,7 +247,7 @@ void map_EvenOdd2Normal_automorph(Float *spinor , int nx ,int ny ,int nz, int nt
 }
 
 
-void mapNormalToEvenOdd(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt)
+static void mapNormalToEvenOdd(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt)
 {
 
   if(param.cpu_prec == QUDA_DOUBLE_PRECISION){
@@ -259,7 +261,7 @@ void mapNormalToEvenOdd(void *spinor, QudaInvertParam param, int nx , int ny , i
     }
 }
 
-void mapEvenOddToNormal(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt)
+static void mapEvenOddToNormal(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt)
 {
 
   if(param.cpu_prec == QUDA_DOUBLE_PRECISION){
@@ -397,7 +399,7 @@ static void map_Normal2EvenOdd_Gauge_automorph(Float **gauge , int nx ,int ny ,i
 }
 
 
-void mapNormalToEvenOddGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt)
+static void mapNormalToEvenOddGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt)
 {
 
   if(param.cpu_prec == QUDA_DOUBLE_PRECISION){
@@ -416,7 +418,7 @@ void mapNormalToEvenOddGauge(void **gauge, QudaGaugeParam param, int nx , int ny
     }
 }
 
-void mapEvenOddToNormalGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt)
+static void mapEvenOddToNormalGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt)
 {
 
   if(param.cpu_prec == QUDA_DOUBLE_PRECISION){

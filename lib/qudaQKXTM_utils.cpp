@@ -18,7 +18,6 @@
 
 #ifdef HAVE_OPENBLAS
 #include <cblas.h>
-#include <common.h>
 #endif
 
 #include <omp.h>

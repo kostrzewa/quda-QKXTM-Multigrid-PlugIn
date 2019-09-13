@@ -10,6 +10,7 @@
 #endif
 
 #include <qudaQKXTM_utils.cpp>
+#include <QKXTM_mapping_parity.h>
 #include <QKXTM_util.h>
 ///////////////////////
 // QKXTM MG Routines //

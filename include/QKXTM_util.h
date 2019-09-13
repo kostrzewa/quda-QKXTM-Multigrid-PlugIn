@@ -101,10 +101,10 @@ void readLimeGaugeSmeared(void **gauge, char *fname, QudaGaugeParam *param, Quda
 void readGaugeAndreas(void **gauge, char *fname, QudaGaugeParam *param, QudaInvertParam *inv_param, int gridSize[4]);
 void applyBoundaryCondition(void **gauge, int Vh ,QudaGaugeParam *gauge_param);
 
-void mapNormalToEvenOddGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt);
-void mapEvenOddToNormalGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt);
-void mapNormalToEvenOdd(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt);
-void mapEvenOddToNormal(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt);
+//void mapNormalToEvenOddGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt);
+//void mapEvenOddToNormalGauge(void **gauge, QudaGaugeParam param, int nx , int ny , int nz, int nt);
+//void mapNormalToEvenOdd(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt);
+//void mapEvenOddToNormal(void *spinor, QudaInvertParam param, int nx , int ny , int nz, int nt);
 
 
 

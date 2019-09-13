@@ -16,7 +16,6 @@
 
 #ifdef HAVE_OPENBLAS
 #include <cblas.h>
-#include <common.h>
 #endif
 
 #include <omp.h>
@@ -1215,21 +1214,21 @@ void QKXTM_Deflation<Float>::eigenSolver(){
     // correctness of this code depends on alignment in Fortran and C 
     // being the same ; if you observe crashes, disable this part 
     
-    _AFT(initlog)(&arpack_log_u, arpack_logfile, strlen(arpack_logfile));
-    int msglvl0 = 0,
-      msglvl1 = 1,
-      msglvl2 = 2,
-      msglvl3 = 3;
-    _AFT(mcinitdebug)(
-		      &arpack_log_u,      //logfil
-		      &msglvl3,           //mcaupd
-		      &msglvl3,           //mcaup2
-		      &msglvl0,           //mcaitr
-		      &msglvl3,           //mceigh
-		      &msglvl0,           //mcapps
-		      &msglvl0,           //mcgets
-		      &msglvl3            //mceupd
-		      );
+    //_AFT(initlog)(&arpack_log_u, arpack_logfile, strlen(arpack_logfile));
+    //int msglvl0 = 0,
+    //  msglvl1 = 1,
+    //  msglvl2 = 2,
+    //  msglvl3 = 3;
+    //_AFT(mcinitdebug)(
+		//      &arpack_log_u,      //logfil
+		//      &msglvl3,           //mcaupd
+		//      &msglvl3,           //mcaup2
+		//      &msglvl0,           //mcaitr
+		//      &msglvl3,           //mceigh
+		//      &msglvl0,           //mcapps
+		//      &msglvl0,           //mcgets
+		//      &msglvl3            //mceupd
+		//      );
     
     printfQuda("eigenSolver: Log info:\n");
     printfQuda(" ARPACK verbosity set to mcaup2=3 mcaupd=3 mceupd=3; \n");
@@ -1239,21 +1238,21 @@ void QKXTM_Deflation<Float>::eigenSolver(){
   if ( NULL != arpack_logfile && (comm_rank() == 0) ) {
     // correctness of this code depends on alignment in Fortran and C 
     // being the same ; if you observe crashes, disable this part 
-    _AFT(initlog)(&arpack_log_u, arpack_logfile, strlen(arpack_logfile));
-    int msglvl0 = 0,
-      msglvl1 = 1,
-      msglvl2 = 2,
-      msglvl3 = 3;
-    _AFT(pmcinitdebug)(
-		       &arpack_log_u,      //logfil
-		       &msglvl3,           //mcaupd
-		       &msglvl3,           //mcaup2
-		       &msglvl0,           //mcaitr
-		       &msglvl3,           //mceigh
-		       &msglvl0,           //mcapps
-		       &msglvl0,           //mcgets
-		       &msglvl3            //mceupd
-		       );
+    //_AFT(initlog)(&arpack_log_u, arpack_logfile, strlen(arpack_logfile));
+    //int msglvl0 = 0,
+    //  msglvl1 = 1,
+    //  msglvl2 = 2,
+    //  msglvl3 = 3;
+    //_AFT(pmcinitdebug)(
+		//       &arpack_log_u,      //logfil
+		//       &msglvl3,           //mcaupd
+		//       &msglvl3,           //mcaup2
+		//       &msglvl0,           //mcaitr
+		//       &msglvl3,           //mceigh
+		//       &msglvl0,           //mcapps
+		//       &msglvl0,           //mcgets
+		//       &msglvl3            //mceupd
+		//       );
     
     printfQuda("eigenSolver: Log info:\n");
     printfQuda(" ARPACK verbosity set to mcaup2=3 mcaupd=3 mceupd=3; \n");
@@ -1405,11 +1404,11 @@ void QKXTM_Deflation<Float>::eigenSolver(){
 
 #ifndef MPI_COMMS
   if (NULL != arpack_logfile)
-    _AFT(finilog)(&arpack_log_u);
+    //_AFT(finilog)(&arpack_log_u);
 #else
   if(comm_rank() == 0){
     if (NULL != arpack_logfile){
-      _AFT(finilog)(&arpack_log_u);
+      //_AFT(finilog)(&arpack_log_u);
     }
   }
 #endif     

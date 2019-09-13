@@ -14,7 +14,6 @@
 #endif
 #ifdef QKXTM_OPENBLAS
 #include <cblas.h>
-#include <common.h>
 #include <omp.h>
 #endif
 

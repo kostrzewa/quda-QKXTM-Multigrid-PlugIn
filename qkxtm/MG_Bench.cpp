@@ -6,6 +6,7 @@
 
 #include <util_quda.h>
 #include <QKXTM_util.h>
+#include <QKXTM_mapping_parity.h>
 #include <dslash_util.h>
 #include <blas_reference.h>
 #include <wilson_dslash_reference.h>

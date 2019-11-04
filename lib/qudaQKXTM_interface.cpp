@@ -12,10 +12,24 @@
 #include <qudaQKXTM_utils.cpp>
 #include <QKXTM_mapping_parity.h>
 #include <QKXTM_util.h>
+
+#include <cmath>
+#include <limits>
+
 ///////////////////////
 // QKXTM MG Routines //
 ///////////////////////
 
+// test if 'x' is 1.0 or a power of two
+bool isOneOrPowerOfTwo(const double x){
+  if( fabs(x - 1.0) <= std::numeric_limits<double>::epsilon() ){
+    return true;
+  }
+
+  double lg = log2(x);
+  double pw = std::pow(2, floor(lg));
+  return( fabs(x - pw) <= std::numeric_limits<double>::epsilon() );
+}
 
 void MG_bench(void **gaugeSmeared, void **gauge, 
 	      QudaGaugeParam *gauge_param, 
@@ -2004,122 +2018,122 @@ void calc_loops(void **gaugeToPlaquette,
     for( int ih = Nc_low ; ih < Nc_high ; ih++) {
       //Loop over spin-colour dilution
       for(int sc = 0 ; sc < Nsc ; sc++){
-	t3 = MPI_Wtime();
-	
-	if(spinColorDil){
-	  if(isProbing) {
-	    get_probing4D_spinColor_dilution<double>(temp_input_vector, input_vector, Vc, ih, sc);
-	  }
-	  else
-	    get_spinColor_dilution<double>(temp_input_vector, input_vector, sc);
-	}
-	else{
-	  if(isProbing)
-	    get_probing4D_dilution<double>(temp_input_vector, input_vector, Vc, ih);
-	  else
-	    temp_input_vector = input_vector;
-	}
-	
-	K_vector->packVector((double*) temp_input_vector);
-	K_vector->loadVector();
-	K_vector->uploadToCuda(b,flag_eo);
-	
-	double orig_tol = param->tol;
-	long int orig_maxiter = param->maxiter;
-		
-	t5 = 0.0;
-     
-	  
-	t1 = MPI_Wtime();
-	    
-	dirac.prepare(in,out,*x,*b,param->solution_type); 
-
-	SolverParam solverParam(*param);
-
-	//Solver operators
-	if(param->inv_type == QUDA_GCR_INVERTER){
-	  DiracM m(dirac), mSloppy(diracSloppy), mPre(diracPre);
-	  Solver *solve = Solver::create(solverParam, m, mSloppy, mPre, profileInvert);
-	  (*solve)(*out,*in);	    
-	  delete solve;
-	}
-	else if(param->inv_type == QUDA_CG_INVERTER){
-	  DiracMdagM m(dirac), mSloppy(diracSloppy), mPre(diracPre);
-	  cudaColorSpinorField tmp(*in);
-	  dirac.Mdag(*in, tmp);
-	  Solver *solve = Solver::create(solverParam, m, mSloppy, mPre, profileInvert);
-	  (*solve)(*out,*in);
-	  delete solve;
-	}
-
-	dirac.reconstruct(*x,*b,param->solution_type);
-	sol = new cudaColorSpinorField(*x);
-	if(is == 0 && ih == 0 && is == 0) saveTuneCache();
-	t2 = MPI_Wtime();
-	    
-	t5 += t2 - t1;
-	    	    	
-	printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, "
-		   "Spin-colour = %02d "
-		   "- Full Inversion Time: %f sec\n",
-		   msg_str, is, ih, sc, t5);
-	
-	// Revert to the original, high-precision values
-	param->tol = orig_tol;           
-	param->maxiter = orig_maxiter;
-	
-		  
-	// Loop over the number of deflation steps
-	for(int dstep=0;dstep<deflSteps;dstep++){
-	  int NeV_defl = nDefl[dstep];
-	    
-	  t1 = MPI_Wtime();	
-	  K_vector->downloadFromCuda(sol,flag_eo);
-	  K_vector->download();
-	    
-	  // Solution is projected and put into x, x <- (1-UU^dag) x
-	  deflation->projectVector(*K_vecdef,*K_vector,is+1,NeV_defl);
-	  K_vecdef->uploadToCuda(x, flag_eo);              
-	    
-	  t2 = MPI_Wtime();
-	  printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Solution projection: %f sec\n",
-		     msg_str, is, ih, sc, NeV_defl, t2-t1);
-	    
-	    
-	  //Index to point to correct part of accumulation array and 
-	  //write buffer
-	  int idx = dstep;
-	    
-	  t1 = MPI_Wtime();
-          // naive loop contraction, added by ADG
-          naiveLoop<double>(*x,*b,param,nai_uloc[idx]); 
-          //one end trick contractions
-	  oneEndTrick_w_One_Der<double>(*x, *tmp3, *tmp4, param, 
-					gen_uloc[idx], std_uloc[idx], 
-					gen_oneD[idx], std_oneD[idx], 
-					gen_csvC[idx], std_csvC[idx],cov);
-	  t2 = MPI_Wtime();
-	    
-	  printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, oneEndTrick: %f sec\n",
-		     msg_str,is, ih, sc, NeV_defl, t2-t1);
-	    
-	  //Condition to assert if we are dumping at this stochastic source
-	  //and if we have completed a loop over Hadamard vectors. If true,
-	  //dump the data.
-	  if( ((is+1)%Nd == 0)&&(ih*Nsc+sc == Nc_high*Nsc-1)){
-	    //iPrint increments the starting points in the write buffers.
-	    if(idx==0) iPrint++;
-	    t1 = MPI_Wtime();
-              performGPU_FT<double>(buf_nai_uloc[idx], nai_uloc[idx], iPrint);
-	      performGPU_FT<double>(buf_std_uloc[idx], std_uloc[idx], iPrint);
-	      performGPU_FT<double>(buf_gen_uloc[idx], gen_uloc[idx], iPrint);
-		
-	      for(int mu=0;mu<4;mu++){
-		performGPU_FT<double>(buf_std_oneD[idx][mu], std_oneD[idx][mu], iPrint);
-		performGPU_FT<double>(buf_std_csvC[idx][mu], std_csvC[idx][mu], iPrint);
-		performGPU_FT<double>(buf_gen_oneD[idx][mu], gen_oneD[idx][mu], iPrint);
-		performGPU_FT<double>(buf_gen_csvC[idx][mu], gen_csvC[idx][mu], iPrint);
-	      }
+        t3 = MPI_Wtime();	
+        if(spinColorDil){
+          if(isProbing) {
+            get_probing4D_spinColor_dilution<double>(temp_input_vector, input_vector, Vc, ih, sc);
+          }
+          else
+            get_spinColor_dilution<double>(temp_input_vector, input_vector, sc);
+        }
+        else{
+          if(isProbing)
+            get_probing4D_dilution<double>(temp_input_vector, input_vector, Vc, ih);
+          else
+            temp_input_vector = input_vector;
+        }
+        
+        K_vector->packVector((double*) temp_input_vector);
+        K_vector->loadVector();
+        K_vector->uploadToCuda(b,flag_eo);
+        
+        double orig_tol = param->tol;
+        long int orig_maxiter = param->maxiter;
+        	
+        t5 = 0.0;
+           
+          
+        t1 = MPI_Wtime();
+            
+        dirac.prepare(in,out,*x,*b,param->solution_type); 
+        
+        SolverParam solverParam(*param);
+        
+        //Solver operators
+        if(param->inv_type == QUDA_GCR_INVERTER){
+          DiracM m(dirac), mSloppy(diracSloppy), mPre(diracPre);
+          Solver *solve = Solver::create(solverParam, m, mSloppy, mPre, profileInvert);
+          (*solve)(*out,*in);	    
+          delete solve;
+        }
+        else if(param->inv_type == QUDA_CG_INVERTER){
+          DiracMdagM m(dirac), mSloppy(diracSloppy), mPre(diracPre);
+          cudaColorSpinorField tmp(*in);
+          dirac.Mdag(*in, tmp);
+          Solver *solve = Solver::create(solverParam, m, mSloppy, mPre, profileInvert);
+          (*solve)(*out,*in);
+          delete solve;
+        }
+        
+        dirac.reconstruct(*x,*b,param->solution_type);
+        sol = new cudaColorSpinorField(*x);
+        if(is == 0 && ih == 0 && is == 0) saveTuneCache();
+        t2 = MPI_Wtime();
+            
+        t5 += t2 - t1;
+            	    	
+        printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, "
+        	   "Spin-colour = %02d "
+        	   "- Full Inversion Time: %f sec\n",
+        	   msg_str, is, ih, sc, t5);
+        
+        // Revert to the original, high-precision values
+        param->tol = orig_tol;           
+        param->maxiter = orig_maxiter;
+        
+        	  
+        // Loop over the number of deflation steps
+        for(int dstep=0;dstep<deflSteps;dstep++){
+          int NeV_defl = nDefl[dstep];
+            
+          t1 = MPI_Wtime();	
+          K_vector->downloadFromCuda(sol,flag_eo);
+          K_vector->download();
+            
+          // Solution is projected and put into x, x <- (1-UU^dag) x
+          deflation->projectVector(*K_vecdef,*K_vector,is+1,NeV_defl);
+          K_vecdef->uploadToCuda(x, flag_eo);              
+            
+          t2 = MPI_Wtime();
+          printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Solution projection: %f sec\n",
+                     msg_str, is, ih, sc, NeV_defl, t2-t1);
+            
+          //Index to point to correct part of accumulation array and 
+          //write buffer
+          int idx = dstep;
+            
+          t1 = MPI_Wtime();
+                // naive loop contraction, added by ADG
+                naiveLoop<double>(*x,*b,param,nai_uloc[idx]); 
+                //one end trick contractions
+          oneEndTrick_w_One_Der<double>(*x, *tmp3, *tmp4, param, 
+        				gen_uloc[idx], std_uloc[idx], 
+        				gen_oneD[idx], std_oneD[idx], 
+        				gen_csvC[idx], std_csvC[idx],cov);
+          t2 = MPI_Wtime();
+            
+          printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, oneEndTrick: %f sec\n",
+        	     msg_str,is, ih, sc, NeV_defl, t2-t1);
+            
+          //Condition to assert if we are dumping at this stochastic source
+          //and if we have completed a loop over Hadamard vectors. If true,
+          //dump the data.
+          //We always dump if the stochastic source index is 1 or a power of two. 
+          if( ( ( (is+1)%Nd == 0) || isOneOrPowerOfTwo( (double)(is+1) ) ) &&
+                (ih*Nsc+sc == Nc_high*Nsc-1) ){
+            //iPrint increments the starting points in the write buffers.
+            if(idx==0) iPrint++;
+            t1 = MPI_Wtime();
+                    performGPU_FT<double>(buf_nai_uloc[idx], nai_uloc[idx], iPrint);
+              performGPU_FT<double>(buf_std_uloc[idx], std_uloc[idx], iPrint);
+              performGPU_FT<double>(buf_gen_uloc[idx], gen_uloc[idx], iPrint);
+        	
+              for(int mu=0;mu<4;mu++){
+                performGPU_FT<double>(buf_std_oneD[idx][mu], std_oneD[idx][mu], iPrint);
+                performGPU_FT<double>(buf_std_csvC[idx][mu], std_csvC[idx][mu], iPrint);
+                performGPU_FT<double>(buf_gen_oneD[idx][mu], gen_oneD[idx][mu], iPrint);
+                performGPU_FT<double>(buf_gen_csvC[idx][mu], gen_csvC[idx][mu], iPrint);
+              }
               
               // ADG: set accumulation arrays to zero after they have been stored in I/O buffers
               cudaMemset(nai_uloc[idx], 0, sizeof(double)*2*16*GK_localVolume);
@@ -2132,17 +2146,16 @@ void calc_loops(void **gaugeToPlaquette,
                 cudaMemset(gen_csvC[idx][mu], 0, sizeof(double)*2*16*GK_localVolume);
               }
               cudaDeviceSynchronize();
- 
-	      t2 = MPI_Wtime();
-	    printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Loops FFT and copy %f sec\n",msg_str, is, ih, sc, NeV_defl,  t2-t1);
-	  }// Dump conditonal
-	}// Deflation steps
+        
+              t2 = MPI_Wtime();
+            printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Loops FFT and copy %f sec\n",msg_str, is, ih, sc, NeV_defl,  t2-t1);
+          }// Dump conditonal
+        }// Deflation steps
 
-	delete sol;
-	t5 = MPI_Wtime();
-	printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d"
-		   " - Total Processing Time %f sec\n",msg_str, is, ih, sc, t5-t3);
-	
+	      delete sol;
+	      t5 = MPI_Wtime();
+	      printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d"
+	      	   " - Total Processing Time %f sec\n",msg_str, is, ih, sc, t5-t3);
       }// Spin-color dilution
     }// Hadamard vectors
   }// Nstoch
@@ -2181,7 +2194,8 @@ void calc_loops(void **gaugeToPlaquette,
     }
     else if(LoopFileFormat==HDF5_FORM){ 
       // Write the loops in HDF5 format
-      writeLoops_HDF5(buf_nai_uloc[idx],buf_std_uloc[idx], buf_gen_uloc[idx], 
+      writeLoops_HDF5(buf_nai_uloc[idx], 
+          buf_std_uloc[idx], buf_gen_uloc[idx], 
 		      buf_std_oneD[idx], buf_std_csvC[idx], 
 		      buf_gen_oneD[idx], buf_gen_csvC[idx],
 		      loop_stoch_fname, loopInfo,  

@@ -2012,7 +2012,7 @@ void calc_loops(void **gaugeToPlaquette,
 
     t2 = MPI_Wtime();
     printfQuda("TIME_REPORT: %s %04d - Source creation: %f sec\n",
-	       msg_str,is+1,t2-t1);
+	       msg_str, is, t2-t1);
 
     //Loop over probing iterations
     for( int ih = Nc_low ; ih < Nc_high ; ih++) {
@@ -2072,7 +2072,7 @@ void calc_loops(void **gaugeToPlaquette,
             
         t5 += t2 - t1;
             	    	
-        printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, "
+        printfQuda("TIME_REPORT: %s Stoch = %06d, HadVec = %04d, "
         	   "Spin-colour = %02d "
         	   "- Full Inversion Time: %f sec\n",
         	   msg_str, is, ih, sc, t5);
@@ -2095,7 +2095,7 @@ void calc_loops(void **gaugeToPlaquette,
           K_vecdef->uploadToCuda(x, flag_eo);              
             
           t2 = MPI_Wtime();
-          printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Solution projection: %f sec\n",
+          printfQuda("TIME_REPORT: %s Stoch = %06d, HadVec = %04d, Spin-colour = %02d, NeV = %04d, Solution projection: %f sec\n",
                      msg_str, is, ih, sc, NeV_defl, t2-t1);
             
           //Index to point to correct part of accumulation array and 
@@ -2112,14 +2112,13 @@ void calc_loops(void **gaugeToPlaquette,
         				gen_csvC[idx], std_csvC[idx],cov);
           t2 = MPI_Wtime();
             
-          printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, oneEndTrick: %f sec\n",
+          printfQuda("TIME_REPORT: %s Stoch = %06d, HadVec = %04d, Spin-colour = %02d, NeV = %04d, oneEndTrick: %f sec\n",
         	     msg_str,is, ih, sc, NeV_defl, t2-t1);
             
           //Condition to assert if we are dumping at this stochastic source
           //and if we have completed a loop over Hadamard vectors. If true,
           //dump the data.
-          //We always dump if the stochastic source index is 1 or a power of two. 
-          if( ( ( (is+1)%Nd == 0) || isOneOrPowerOfTwo( (double)(is+1) ) ) &&
+          if( ( ( (is+1)%Nd == 0) ) &&
                 (ih*Nsc+sc == Nc_high*Nsc-1) ){
             //iPrint increments the starting points in the write buffers.
             if(idx==0) iPrint++;
@@ -2148,13 +2147,13 @@ void calc_loops(void **gaugeToPlaquette,
               cudaDeviceSynchronize();
         
               t2 = MPI_Wtime();
-            printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, Loops FFT and copy %f sec\n",msg_str, is, ih, sc, NeV_defl,  t2-t1);
+            printfQuda("TIME_REPORT: %s Stoch = %06d, HadVec = %04d, Spin-colour = %02d, NeV = %04d, Loops FFT and copy %f sec\n",msg_str, is, ih, sc, NeV_defl,  t2-t1);
           }// Dump conditonal
         }// Deflation steps
 
 	      delete sol;
 	      t5 = MPI_Wtime();
-	      printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d"
+	      printfQuda("TIME_REPORT: %s Stoch = %06d, HadVec = %04d, Spin-colour = %02d"
 	      	   " - Total Processing Time %f sec\n",msg_str, is, ih, sc, t5-t3);
       }// Spin-color dilution
     }// Hadamard vectors

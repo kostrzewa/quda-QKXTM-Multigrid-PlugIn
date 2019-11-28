@@ -1578,23 +1578,23 @@ void calc_loops(void **gaugeToPlaquette,
   cudaMemset(tmp_loop      , 0, sizeof(double)*2*16*GK_localVolume);
   
   //Naive Loop
-  void *nai_uloc[deflSteps];
+  //void *nai_uloc[deflSteps];
   
   //Ultra Local
   void *std_uloc[deflSteps];
   void *gen_uloc[deflSteps];
 
   //One Derivative
-  void **std_oneD[deflSteps];
-  void **gen_oneD[deflSteps];
-  void **std_csvC[deflSteps];
-  void **gen_csvC[deflSteps];  
+  //void **std_oneD[deflSteps];
+  //void **gen_oneD[deflSteps];
+  //void **std_csvC[deflSteps];
+  //void **gen_csvC[deflSteps];  
 
   for(int step=0;step<deflSteps;step++){
     //- ultra-local loops
-    if((cudaHostAlloc(&(nai_uloc[step]), sizeof(double)*2*16*GK_localVolume, 
-		      cudaHostAllocMapped)) != cudaSuccess)
-      errorQuda("%s: Error allocating memory nai_uloc[%d]\n",fname,step);
+    //if((cudaHostAlloc(&(nai_uloc[step]), sizeof(double)*2*16*GK_localVolume, 
+	//	      cudaHostAllocMapped)) != cudaSuccess)
+      //errorQuda("%s: Error allocating memory nai_uloc[%d]\n",fname,step);
     if((cudaHostAlloc(&(std_uloc[step]), sizeof(double)*2*16*GK_localVolume, 
 		      cudaHostAllocMapped)) != cudaSuccess)
       errorQuda("%s: Error allocating memory std_uloc[%d]\n",fname,step);
@@ -1602,13 +1602,15 @@ void calc_loops(void **gaugeToPlaquette,
 		      cudaHostAllocMapped)) != cudaSuccess)
       errorQuda("%s: Error allocating memory gen_uloc[%d]\n",fname,step);
     
-    cudaMemset(nai_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
+    //cudaMemset(nai_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
     cudaMemset(std_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
     cudaMemset(gen_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
 
     cudaDeviceSynchronize();
 
     //- one-Derivative and conserved current loops
+    
+#if 0
     std_oneD[step] = (void**) malloc(sizeof(double*)*4);
     gen_oneD[step] = (void**) malloc(sizeof(double*)*4);
     std_csvC[step] = (void**) malloc(sizeof(double*)*4);
@@ -1622,6 +1624,7 @@ void calc_loops(void **gaugeToPlaquette,
       errorQuda("%s: Error allocating memory std_csvC[%d]\n",fname,step);
     if(gen_csvC[step] == NULL) 
       errorQuda("%s: Error allocating memory gen_csvC[%d]\n",fname,step);
+    
     cudaDeviceSynchronize();
     
     for(int mu = 0; mu < 4 ; mu++){
@@ -1647,7 +1650,9 @@ void calc_loops(void **gaugeToPlaquette,
       cudaMemset(std_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
       cudaMemset(gen_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
     }
+
     cudaDeviceSynchronize();
+#endif 
   }//-step (Nev)
   printfQuda("%s: Accumulation buffers memory allocated properly.\n",fname);
   //----------------------------------------------------------------------//
@@ -1655,35 +1660,36 @@ void calc_loops(void **gaugeToPlaquette,
   //-Allocate memory for the write buffers
   int Nprt = Nprint;
 
-  double *buf_nai_uloc[deflSteps];
+  //double *buf_nai_uloc[deflSteps];
   double *buf_std_uloc[deflSteps];
   double *buf_gen_uloc[deflSteps];
+#if 0
   double **buf_std_oneD[deflSteps];
   double **buf_gen_oneD[deflSteps];
   double **buf_std_csvC[deflSteps];
   double **buf_gen_csvC[deflSteps];
-
+#endif
   for(int step=0;step<deflSteps;step++){
 
-    buf_nai_uloc[step] = 
-      (double*)malloc(sizeof(double)*Nprt*2*16*Nmoms*GK_localL[3]);
+    //buf_nai_uloc[step] = 
+    //  (double*)malloc(sizeof(double)*Nprt*2*16*Nmoms*GK_localL[3]);
     buf_std_uloc[step] = 
       (double*)malloc(sizeof(double)*Nprt*2*16*Nmoms*GK_localL[3]);
     buf_gen_uloc[step] = 
       (double*)malloc(sizeof(double)*Nprt*2*16*Nmoms*GK_localL[3]);
-
+#if 0
     buf_std_oneD[step] = (double**) malloc(sizeof(double*)*4);
     buf_gen_oneD[step] = (double**) malloc(sizeof(double*)*4);  
     buf_std_csvC[step] = (double**) malloc(sizeof(double*)*4);
     buf_gen_csvC[step] = (double**) malloc(sizeof(double*)*4);
-
-    if( buf_nai_uloc[step] == NULL ) 
-      errorQuda("Allocation of buffer buf_std_uloc[%d] failed.\n",step);
+#endif
+    //if( buf_nai_uloc[step] == NULL ) 
+    //  errorQuda("Allocation of buffer buf_std_uloc[%d] failed.\n",step);
     if( buf_std_uloc[step] == NULL ) 
       errorQuda("Allocation of buffer buf_std_uloc[%d] failed.\n",step);
     if( buf_gen_uloc[step] == NULL ) 
       errorQuda("Allocation of buffer buf_gen_uloc[%d] failed.\n",step);
-    
+#if 0    
     if( buf_std_oneD[step] == NULL ) 
       errorQuda("Allocation of buffer buf_std_oneD[%d] failed.\n",step);
     if( buf_gen_oneD[step] == NULL ) 
@@ -1716,6 +1722,7 @@ void calc_loops(void **gaugeToPlaquette,
 	errorQuda("Allocation of buffer buf_gen_csvC[%d][%d] failed.\n",
 		  step,mu);
     }
+#endif
   }
 
 
@@ -1781,10 +1788,13 @@ void calc_loops(void **gaugeToPlaquette,
   
   for(int n=0;n<NeV_Full;n++){
     t1 = MPI_Wtime();
-    deflation->Loop_w_One_Der_FullOp_Exact(n, EvInvParam,
-					   gen_uloc[0], std_uloc[0], 
-					   gen_oneD[0], std_oneD[0], 
-					   gen_csvC[0], std_csvC[0], cov);
+    //deflation->Loop_w_One_Der_FullOp_Exact(n, EvInvParam,
+//					   gen_uloc[0], std_uloc[0], 
+//					   gen_oneD[0], std_oneD[0], 
+//					   gen_csvC[0], std_csvC[0], cov);
+    deflation->Loop_w_No_Der_FullOp_Exact(n, EvInvParam,
+					   gen_uloc[0], std_uloc[0], cov);
+
     t2 = MPI_Wtime();
     printfQuda("TIME_REPORT: Exact part for EV %d done in: %f sec\n",
 	       n+1,t2-t1);
@@ -1794,12 +1804,14 @@ void calc_loops(void **gaugeToPlaquette,
 	t1 = MPI_Wtime();
 	performGPU_FT<double>(buf_std_uloc[0], std_uloc[0], iPrint);
 	performGPU_FT<double>(buf_gen_uloc[0], gen_uloc[0], iPrint);
+#if 0
 	for(int mu=0;mu<4;mu++){
 	  performGPU_FT<double>(buf_std_oneD[0][mu], std_oneD[0][mu], iPrint);
 	  performGPU_FT<double>(buf_std_csvC[0][mu], std_csvC[0][mu], iPrint);
 	  performGPU_FT<double>(buf_gen_oneD[0][mu], gen_oneD[0][mu], iPrint);
 	  performGPU_FT<double>(buf_gen_csvC[0][mu], gen_csvC[0][mu], iPrint);
 	}
+#endif
 	t2 = MPI_Wtime();
 	printfQuda("TIME_REPORT: GPU FT in %f sec\n",t2-t1);
 
@@ -1816,6 +1828,7 @@ void calc_loops(void **gaugeToPlaquette,
 	// dOp
 	writeLoops_ASCII(buf_gen_uloc[0], loop_exact_fname, 
 			 loopInfo,  1, 0, exact_part);
+#if 0
 	for(int mu = 0 ; mu < 4 ; mu++){
 	  // Loops
 	  writeLoops_ASCII(buf_std_oneD[0][mu], loop_exact_fname, 
@@ -1830,6 +1843,7 @@ void calc_loops(void **gaugeToPlaquette,
 	  writeLoops_ASCII(buf_gen_csvC[0][mu], loop_exact_fname, 
 			   loopInfo,  5, mu, exact_part); 
 	}
+#endif
       }
       else if(LoopFileFormat==HDF5_FORM){
 	// Write the loops in HDF5 format
@@ -1971,16 +1985,17 @@ void calc_loops(void **gaugeToPlaquette,
   cudaMemset(tmp_loop, 0, sizeof(double)*2*16*GK_localVolume);
 
   for(int step=0;step<deflSteps;step++){
-    cudaMemset(nai_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
+    //cudaMemset(nai_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
     cudaMemset(std_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
     cudaMemset(gen_uloc[step], 0, sizeof(double)*2*16*GK_localVolume);
-    
+#if 0    
     for(int mu = 0; mu < 4 ; mu++){
       cudaMemset(std_oneD[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
       cudaMemset(gen_oneD[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
       cudaMemset(std_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
       cudaMemset(gen_csvC[step][mu], 0, sizeof(double)*2*16*GK_localVolume);
     }
+#endif
     cudaDeviceSynchronize();
   }
 
@@ -2091,12 +2106,14 @@ void calc_loops(void **gaugeToPlaquette,
 	    
 	  t1 = MPI_Wtime();
           // naive loop contraction, added by ADG
-          naiveLoop<double>(*x,*b,param,nai_uloc[idx]); 
+          //naiveLoop<double>(*x,*b,param,nai_uloc[idx]); 
           //one end trick contractions
-	  oneEndTrick_w_One_Der<double>(*x, *tmp3, *tmp4, param, 
-					gen_uloc[idx], std_uloc[idx], 
-					gen_oneD[idx], std_oneD[idx], 
-					gen_csvC[idx], std_csvC[idx],cov);
+	  //oneEndTrick_w_One_Der<double>(*x, *tmp3, *tmp4, param, 
+	  //				gen_uloc[idx], std_uloc[idx], 
+	  //				gen_oneD[idx], std_oneD[idx], 
+	  //				gen_csvC[idx], std_csvC[idx],cov);
+	  oneEndTrick_w_No_Der<double>(*x, *tmp3, *tmp4, param, 
+					gen_uloc[idx], std_uloc[idx],cov);
 	  t2 = MPI_Wtime();
 	    
 	  printfQuda("TIME_REPORT: %s Stoch = %02d, HadVec = %02d, Spin-colour = %02d, NeV = %04d, oneEndTrick: %f sec\n",
@@ -2109,27 +2126,29 @@ void calc_loops(void **gaugeToPlaquette,
 	    //iPrint increments the starting points in the write buffers.
 	    if(idx==0) iPrint++;
 	    t1 = MPI_Wtime();
-              performGPU_FT<double>(buf_nai_uloc[idx], nai_uloc[idx], iPrint);
+              //performGPU_FT<double>(buf_nai_uloc[idx], nai_uloc[idx], iPrint);
 	      performGPU_FT<double>(buf_std_uloc[idx], std_uloc[idx], iPrint);
 	      performGPU_FT<double>(buf_gen_uloc[idx], gen_uloc[idx], iPrint);
-		
+#if 0		
 	      for(int mu=0;mu<4;mu++){
 		performGPU_FT<double>(buf_std_oneD[idx][mu], std_oneD[idx][mu], iPrint);
 		performGPU_FT<double>(buf_std_csvC[idx][mu], std_csvC[idx][mu], iPrint);
 		performGPU_FT<double>(buf_gen_oneD[idx][mu], gen_oneD[idx][mu], iPrint);
 		performGPU_FT<double>(buf_gen_csvC[idx][mu], gen_csvC[idx][mu], iPrint);
 	      }
-              
+ #endif             
               // ADG: set accumulation arrays to zero after they have been stored in I/O buffers
-              cudaMemset(nai_uloc[idx], 0, sizeof(double)*2*16*GK_localVolume);
+              //cudaMemset(nai_uloc[idx], 0, sizeof(double)*2*16*GK_localVolume);
               cudaMemset(std_uloc[idx], 0, sizeof(double)*2*16*GK_localVolume);
               cudaMemset(gen_uloc[idx], 0, sizeof(double)*2*16*GK_localVolume);
+              #if 0
               for(int mu = 0; mu < 4 ; mu++){
                 cudaMemset(std_oneD[idx][mu], 0, sizeof(double)*2*16*GK_localVolume);
                 cudaMemset(gen_oneD[idx][mu], 0, sizeof(double)*2*16*GK_localVolume);
                 cudaMemset(std_csvC[idx][mu], 0, sizeof(double)*2*16*GK_localVolume);
                 cudaMemset(gen_csvC[idx][mu], 0, sizeof(double)*2*16*GK_localVolume);
               }
+              #endif
               cudaDeviceSynchronize();
  
 	      t2 = MPI_Wtime();
@@ -2167,6 +2186,7 @@ void calc_loops(void **gaugeToPlaquette,
 		       loopInfo,  0, 0, stoch_part); // Scalar
       writeLoops_ASCII(buf_gen_uloc[idx], loop_stoch_fname, 
 		       loopInfo,  1, 0, stoch_part); // dOp
+      #if 0
       for(int mu = 0 ; mu < 4 ; mu++){
 	writeLoops_ASCII(buf_std_oneD[idx][mu], loop_stoch_fname, 
 			 loopInfo,  2, mu, stoch_part); // Loops
@@ -2177,6 +2197,7 @@ void calc_loops(void **gaugeToPlaquette,
 	writeLoops_ASCII(buf_gen_csvC[idx][mu], loop_stoch_fname, 
 			 loopInfo,  5, mu, stoch_part); // LpsDwCv
       }
+      #endif
     }
     else if(LoopFileFormat==HDF5_FORM){ 
       // Write the loops in HDF5 format
@@ -2206,9 +2227,11 @@ void calc_loops(void **gaugeToPlaquette,
   cudaFreeHost(tmp_loop);
   for(int step=0;step<deflSteps;step++){
     //-accumulation buffers
-    cudaFreeHost(nai_uloc[step]);
+    //cudaFreeHost(nai_uloc[step]);
     cudaFreeHost(std_uloc[step]);
     cudaFreeHost(gen_uloc[step]);
+    
+#if 0
     for(int mu = 0 ; mu < 4 ; mu++){
       cudaFreeHost(std_oneD[step][mu]);
       cudaFreeHost(gen_oneD[step][mu]);
@@ -2219,11 +2242,13 @@ void calc_loops(void **gaugeToPlaquette,
     free(gen_oneD[step]);
     free(std_csvC[step]);
     free(gen_csvC[step]);   
-    
+#endif    
+
     //-write buffers
-    free(buf_nai_uloc[step]);
+    //free(buf_nai_uloc[step]);
     free(buf_std_uloc[step]);
     free(buf_gen_uloc[step]);
+#if 0
     for(int mu = 0 ; mu < 4 ; mu++){
       free(buf_std_oneD[step][mu]);
       free(buf_std_csvC[step][mu]);
@@ -2234,6 +2259,7 @@ void calc_loops(void **gaugeToPlaquette,
     free(buf_std_csvC[step]);
     free(buf_gen_oneD[step]);
     free(buf_gen_csvC[step]);
+#endif
   }//-step
   //---------------------------
   

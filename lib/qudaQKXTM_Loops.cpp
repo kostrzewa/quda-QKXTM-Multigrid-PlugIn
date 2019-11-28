@@ -292,6 +292,145 @@ Loop_w_One_Der_FullOp_Exact(int n, QudaInvertParam *param,
   checkCudaError();
 }
 
+// exact part of loops, with no deriv loops
+template<typename Float>
+void QKXTM_Deflation<Float>::
+Loop_w_No_Der_FullOp_Exact(int n, QudaInvertParam *param,
+			    void *gen_uloc,void *std_uloc,GaugeCovDev *cov){
+  
+  if(!isFullOp) errorQuda("oneEndTrick_w_No_Der_FullOp_Exact: This function only works with the full operator\n");
+  if(cov==NULL) errorQuda("CovDev has not been constructed");
+  void *h_ctrn, *ctrnS, *ctrnC;
+
+  double t1,t2;
+
+  if((cudaMallocHost(&h_ctrn, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("oneEndTrick_w_No_Der_FullOp_Exact: Error allocating memory for contraction results in CPU.\n");
+  cudaMemset(h_ctrn, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+  
+  if((cudaMalloc(&ctrnS, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("oneEndTrick_w_No_Der_FullOp_Exact: Error allocating memory for contraction results in GPU.\n");
+  cudaMemset(ctrnS, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  if((cudaMalloc(&ctrnC, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("oneEndTrick_w_No_Der_FullOp_Exact: Error allocating memory for contraction results in GPU.\n");
+  cudaMemset(ctrnC, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  checkCudaError();
+
+  //- Set the eigenvector into cudaColorSpinorField format and save to x
+  bool pc_solve = false;
+  cudaColorSpinorField *x1 = NULL;
+
+  double *eigVec = (double*) malloc(bytes_total_length_per_NeV);
+  memcpy(eigVec,&(h_elem[n*total_length_per_NeV]),bytes_total_length_per_NeV);
+
+  QKXTM_Vector<double> *Kvec = 
+    new QKXTM_Vector<double>(BOTH,VECTOR);
+  
+  ColorSpinorParam cpuParam((void*)eigVec,*param,GK_localL,pc_solve);
+  ColorSpinorParam cudaParam(cpuParam, *param);
+  cudaParam.create = QUDA_ZERO_FIELD_CREATE;
+  x1 = new cudaColorSpinorField(cudaParam);
+
+  Kvec->packVector(eigVec);
+  Kvec->loadVector();
+  Kvec->uploadToCuda(x1,pc_solve);
+
+  Float eVal = eigenValues[2*n+0];
+
+  cudaColorSpinorField *tmp1 = NULL;
+  cudaColorSpinorField *tmp2 = NULL;
+  cudaParam.create = QUDA_ZERO_FIELD_CREATE;
+  tmp1 = new cudaColorSpinorField(cudaParam);
+  tmp2 = new cudaColorSpinorField(cudaParam);
+  blas::zero(*tmp1);
+  blas::zero(*tmp2);
+
+  cudaColorSpinorField &tmp3 = *tmp1;
+  cudaColorSpinorField &tmp4 = *tmp2;
+  cudaColorSpinorField &x = *x1;
+  //------------------------------------------------------------------------
+  
+  DiracParam dWParam;
+  dWParam.matpcType = QUDA_MATPC_EVEN_EVEN;
+  dWParam.dagger    = QUDA_DAG_NO;
+  dWParam.gauge     = gaugePrecise;
+  dWParam.kappa     = param->kappa;
+  dWParam.mass      = 1./(2.*param->kappa) - 4.;
+  dWParam.m5        = 0.;
+  dWParam.mu        = 0.;
+  for(int i=0; i<4; i++)
+    dWParam.commDim[i] = 1;
+
+  if(param->dslash_type == QUDA_TWISTED_CLOVER_DSLASH){
+    dWParam.type = QUDA_CLOVER_DIRAC;
+    dWParam.clover = cloverPrecise;
+    DiracClover *dW = new DiracClover(dWParam);
+    dW->M(tmp4,x);
+    delete dW;
+  } 
+  else if (param->dslash_type == QUDA_TWISTED_MASS_DSLASH){
+    dWParam.type = QUDA_WILSON_DIRAC;
+    DiracWilson *dW = new DiracWilson(dWParam);
+    dW->M(tmp4,x);
+    delete dW;
+  }
+  else{
+    errorQuda("oneEndTrick_w_No_Der_FullOp_Exact: One end trick works only for twisted mass fermions\n");
+  }
+  checkCudaError();
+
+  gamma5Cuda(static_cast<cudaColorSpinorField*>(&tmp3.Even()), 
+	     static_cast<cudaColorSpinorField*>(&tmp4.Even()));
+  gamma5Cuda(static_cast<cudaColorSpinorField*>(&tmp3.Odd()), 
+	     static_cast<cudaColorSpinorField*>(&tmp4.Odd()));
+
+  long int sizeBuffer;
+  sizeBuffer = 
+    sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+
+  int NN = 16*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+  int incx = 1;
+  int incy = 1;
+  Float pceval[2] = {1.0/eVal,0.0};
+  Float mceval[2] = {-1.0/eVal,0.0};
+
+  // ULTRA-LOCAL Generalized one-end trick
+  contract(x, tmp3, ctrnS, QUDA_CONTRACT_GAMMA5);
+  cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
+
+  if( typeid(Float) == typeid(float) ) 
+    cblas_caxpy(NN,(float*)pceval,(float*)h_ctrn,incx,(float*)gen_uloc,incy);
+  else if( typeid(Float) == typeid(double) ) 
+    cblas_zaxpy(NN,(double*)pceval,(double*)h_ctrn,incx,(double*)gen_uloc,incy);
+  //------------------------------------------------
+
+  // ULTRA-LOCAL Standard one-end trick
+  contract(x, x, ctrnS, QUDA_CONTRACT_GAMMA5);
+  cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
+
+  if( typeid(Float) == typeid(float) ) 
+    cblas_caxpy(NN,(float*)mceval,(float*)h_ctrn,incx,(float*)std_uloc,incy);
+  else if( typeid(Float) == typeid(double) ) 
+    cblas_zaxpy(NN,(double*)mceval,(double*)h_ctrn,incx,(double*)std_uloc,incy);
+  //------------------------------------------------
+
+  cudaDeviceSynchronize();
+ 
+  delete Kvec;
+  delete x1;
+  delete tmp1;
+  delete tmp2;
+  free(eigVec);
+
+  cudaFreeHost(h_ctrn);
+  cudaFree(ctrnS);
+  cudaFree(ctrnC);
+  checkCudaError();
+}
+
+
 // Computes simple stochastic loop, ADG 25/2/19
 template<typename Float>
 void naiveLoop(ColorSpinorField &x, ColorSpinorField &b, QudaInvertParam *param, void *cnRes_nai){
@@ -528,6 +667,104 @@ void oneEndTrick_w_One_Der(ColorSpinorField &x, ColorSpinorField &tmp3,
   checkCudaError();
 }
 
+// stoch loops one end trick, no derivatives
+template<typename Float>
+void oneEndTrick_w_No_Der(ColorSpinorField &x, ColorSpinorField &tmp3, 
+			   ColorSpinorField &tmp4, QudaInvertParam *param,
+			   void *cnRes_gv,void *cnRes_vv, GaugeCovDev *cov){
+  
+  void *h_ctrn, *ctrnS, *ctrnC;
+  if(cov==NULL) errorQuda("CovDev has not been constructed");
+  if((cudaMallocHost(&h_ctrn, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("Error allocating memory for contraction results in CPU.\n");
+  cudaMemset(h_ctrn, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  if((cudaMalloc(&ctrnS, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("Error allocating memory for contraction results in GPU.\n");
+  cudaMemset(ctrnS, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  if((cudaMalloc(&ctrnC, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3])) == cudaErrorMemoryAllocation)
+    errorQuda("Error allocating memory for contraction results in GPU.\n");
+  cudaMemset(ctrnC, 0, sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]);
+
+  checkCudaError();
+
+  DiracParam dWParam;
+  dWParam.matpcType        = QUDA_MATPC_EVEN_EVEN;
+  dWParam.dagger           = QUDA_DAG_NO;
+  dWParam.gauge            = gaugePrecise;
+  dWParam.kappa            = param->kappa;
+  dWParam.mass             = 1./(2.*param->kappa) - 4.;
+  dWParam.m5               = 0.;
+  dWParam.mu               = 0.;
+  for     (int i=0; i<4; i++)
+    dWParam.commDim[i]       = 1;
+
+  if(param->dslash_type == QUDA_TWISTED_CLOVER_DSLASH) {
+    dWParam.type           = QUDA_CLOVER_DIRAC;
+    dWParam.clover                 = cloverPrecise;
+    DiracClover   *dW      = new DiracClover(dWParam);
+    dW->M(tmp4,x);
+    delete  dW;
+  } 
+  else if (param->dslash_type == QUDA_TWISTED_MASS_DSLASH) {
+    dWParam.type           = QUDA_WILSON_DIRAC;
+    DiracWilson   *dW      = new DiracWilson(dWParam);
+    dW->M(tmp4,x);
+    delete  dW;
+  }
+  else{
+    errorQuda("Error one end trick works only for twisted mass fermions\n");
+  }
+
+  checkCudaError();
+
+  gamma5Cuda(static_cast<cudaColorSpinorField*>(&tmp3.Even()), 
+	     static_cast<cudaColorSpinorField*>(&tmp4.Even()));
+  gamma5Cuda(static_cast<cudaColorSpinorField*>(&tmp3.Odd()), 
+	     static_cast<cudaColorSpinorField*>(&tmp4.Odd()));
+  
+  long int sizeBuffer;
+  sizeBuffer = 
+    sizeof(Float)*32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+
+  int NN = 16*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3];
+  int incx = 1;
+  int incy = 1;
+  Float pceval[2] = {1.0,0.0};
+  Float mceval[2] = {-1.0,0.0};
+
+  ///////////////// LOCAL ///////////////////////////
+  contract(x, tmp3, ctrnS, QUDA_CONTRACT_GAMMA5);
+  cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
+  
+  if( typeid(Float) == typeid(float) ) 
+    cblas_caxpy(NN,(float*)pceval,(float*)h_ctrn,incx,(float*)cnRes_gv,incy);
+  else if( typeid(Float) == typeid(double) ) 
+    cblas_zaxpy(NN,(double*)pceval,(double*)h_ctrn,incx,(double*)cnRes_gv,incy);
+  
+  //    for(int ix=0; ix < 32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]; ix++)
+  //      ((Float*) cnRes_gv)[ix] += ((Float*)h_ctrn)[ix]; // generalized one end trick
+  
+  contract(x, x, ctrnS, QUDA_CONTRACT_GAMMA5);
+  cudaMemcpy(h_ctrn, ctrnS, sizeBuffer, cudaMemcpyDeviceToHost);
+  
+  //    for(int ix=0; ix < 32*GK_localL[0]*GK_localL[1]*GK_localL[2]*GK_localL[3]; ix++)
+  //      ((Float*) cnRes_vv)[ix] -= ((Float*)h_ctrn)[ix]; // standard one end trick
+  
+  if( typeid(Float) == typeid(float) ) {
+    cblas_caxpy(NN, (float*) mceval, (float*) h_ctrn, incx, (float*) cnRes_vv, incy);
+  }
+  else if( typeid(Float) == typeid(double) ) {
+    cblas_zaxpy(NN, (double*) mceval, (double*) h_ctrn, incx, (double*) cnRes_vv, incy);
+  }  
+
+  cudaDeviceSynchronize();
+  cudaFreeHost(h_ctrn);
+  cudaFree(ctrnS);
+  cudaFree(ctrnC);
+  checkCudaError();
+}
 
 //-C.K. This is a new function to print all the loops in ASCII format
 template<typename Float>

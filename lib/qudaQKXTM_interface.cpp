@@ -1509,26 +1509,26 @@ void calc_loops(void **gaugeToPlaquette,
   char loop_stoch_fname[512];
   
   // naive local
-  loopInfo.loop_type[0] = "Naive";
-  loopInfo.loop_oneD[0] = false;
+  //loopInfo.loop_type[0] = "Naive";
+  //loopInfo.loop_oneD[0] = false;
   // std-ultra_local
-  loopInfo.loop_type[1] = "Scalar"; 
-  loopInfo.loop_oneD[1] = false;
+  loopInfo.loop_type[0] = "Scalar"; 
+  loopInfo.loop_oneD[0] = false;
   // gen-ultra_local
-  loopInfo.loop_type[2] = "dOp";    
-  loopInfo.loop_oneD[2] = false;   
+  loopInfo.loop_type[1] = "dOp";    
+  loopInfo.loop_oneD[1] = false;   
   // std-one_derivative
-  loopInfo.loop_type[3] = "Loops";  
-  loopInfo.loop_oneD[3] = true;    
+  //loopInfo.loop_type[3] = "Loops";  
+  //loopInfo.loop_oneD[3] = true;    
   // std-conserved current
-  loopInfo.loop_type[4] = "LoopsCv";
-  loopInfo.loop_oneD[4] = true;    
+  //loopInfo.loop_type[4] = "LoopsCv";
+  //loopInfo.loop_oneD[4] = true;    
   // gen-one_derivative
-  loopInfo.loop_type[5] = "LpsDw";  
-  loopInfo.loop_oneD[5] = true;   
+  //loopInfo.loop_type[5] = "LpsDw";  
+  //loopInfo.loop_oneD[5] = true;   
   // gen-conserved current 
-  loopInfo.loop_type[6] = "LpsDwCv";
-  loopInfo.loop_oneD[6] = true;   
+  //loopInfo.loop_type[6] = "LpsDwCv";
+  //loopInfo.loop_oneD[6] = true;   
 
   printfQuda("\nLoop Calculation Info\n");
   printfQuda("=====================\n");
@@ -1847,9 +1847,7 @@ void calc_loops(void **gaugeToPlaquette,
       }
       else if(LoopFileFormat==HDF5_FORM){
 	// Write the loops in HDF5 format
-	writeLoops_HDF5(buf_nai_uloc[0], buf_std_uloc[0], buf_gen_uloc[0], 
-			buf_std_oneD[0], buf_std_csvC[0], 
-			buf_gen_oneD[0], buf_gen_csvC[0], 
+	writeLoops_HDF5_NoDer(buf_std_uloc[0], buf_gen_uloc[0], 
 			loop_exact_fname, loopInfo, 
 			 exact_part);
       }
@@ -2201,9 +2199,7 @@ void calc_loops(void **gaugeToPlaquette,
     }
     else if(LoopFileFormat==HDF5_FORM){ 
       // Write the loops in HDF5 format
-      writeLoops_HDF5(buf_nai_uloc[idx],buf_std_uloc[idx], buf_gen_uloc[idx], 
-		      buf_std_oneD[idx], buf_std_csvC[idx], 
-		      buf_gen_oneD[idx], buf_gen_csvC[idx],
+      writeLoops_HDF5_NoDer(buf_std_uloc[idx], buf_gen_uloc[idx], 
 		      loop_stoch_fname, loopInfo,  
 		      stoch_part);
     }

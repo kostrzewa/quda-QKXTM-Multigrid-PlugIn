@@ -1149,7 +1149,7 @@ static void checkGauge(Float **oldG, Float **newG, double epsilon) {
 	for (int j=0; j<18; j++) {
 	  double diff = fabs(newG[d][ga_idx*18+j] - oldG[d][ga_idx*18+j]);/// fabs(oldG[d][ga_idx*18+j]);
 
-	  for (int f=0; f<fail_check; f++) if (diff > pow(10.0,-(f+1))) fail[d][f]++;
+	  for (int f=0; f<fail_check; f++) if (diff > std::pow(10.0,-(f+1))) fail[d][f]++;
 	  if (diff > epsilon) iter[d][j]++;
 	}
       }
@@ -1161,7 +1161,7 @@ static void checkGauge(Float **oldG, Float **newG, double epsilon) {
 
   printf("\nDeviation Failures = (X, Y, Z, T)\n");
   for (int f=0; f<fail_check; f++) {
-    printf("%e Failures = (%9d, %9d, %9d, %9d) = (%6.5f, %6.5f, %6.5f, %6.5f)\n", pow(10.0,-(f+1)), 
+    printf("%e Failures = (%9d, %9d, %9d, %9d) = (%6.5f, %6.5f, %6.5f, %6.5f)\n", std::pow(10.0,-(f+1)), 
 	   fail[0][f], fail[1][f], fail[2][f], fail[3][f],
 	   fail[0][f]/(double)(V*18), fail[1][f]/(double)(V*18), fail[2][f]/(double)(V*18), fail[3][f]/(double)(V*18));
   }
@@ -1322,7 +1322,7 @@ int compareLink(Float **linkA, Float **linkB, int len) {
 	int is = i*18+j;
 	double diff = fabs(linkA[dir][is]-linkB[dir][is]);
 	for (int f=0; f<fail_check; f++)
-	  if (diff > pow(10.0,-(f+1))) fail[f]++;
+	  if (diff > std::pow(10.0,-(f+1))) fail[f]++;
 	//if (diff > 1e-1) printf("%d %d %e\n", i, j, diff);
 	if (diff > 1e-3) iter[j]++;
       }
@@ -1339,7 +1339,7 @@ int compareLink(Float **linkA, Float **linkB, int len) {
   }
 
   for (int f=0; f<fail_check; f++) {
-    printfQuda("%e Failures: %d / %d  = %e\n", pow(10.0,-(f+1)), fail[f], 4*len*18, fail[f] / (double)(4*len*18));
+    printfQuda("%e Failures: %d / %d  = %e\n", std::pow(10.0,-(f+1)), fail[f], 4*len*18, fail[f] / (double)(4*len*18));
   }
   
   return accuracy_level;
@@ -1479,7 +1479,7 @@ int compare_mom(Float *momA, Float *momB, int len) {
       int is = i*momSiteSize+j;
       double diff = fabs(momA[is]-momB[is]);
       for (int f=0; f<fail_check; f++)
-	if (diff > pow(10.0,-(f+1))) fail[f]++;
+	if (diff > std::pow(10.0,-(f+1))) fail[f]++;
       //if (diff > 1e-1) printf("%d %d %e\n", i, j, diff);
       if (diff > 1e-3) iter[j]++;
     }
@@ -1495,7 +1495,7 @@ int compare_mom(Float *momA, Float *momB, int len) {
   for (int i=0; i<momSiteSize; i++) printfQuda("%d fails = %d\n", i, iter[i]);
   
   for (int f=0; f<fail_check; f++) {
-    printfQuda("%e Failures: %d / %d  = %e\n", pow(10.0,-(f+1)), fail[f], len*9, fail[f]/(double)(len*9));
+    printfQuda("%e Failures: %d / %d  = %e\n", std::pow(10.0,-(f+1)), fail[f], len*9, fail[f]/(double)(len*9));
   }
   
   return accuracy_level;

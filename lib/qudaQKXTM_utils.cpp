@@ -668,9 +668,9 @@ unsigned short int* hch_coloring(int k, int d){
     errorQuda("Only 3 and 4 dimensions of coloring are allowed");
   if( k < 1)
     errorQuda("k must be greater than 1");
-  int Nc = 2*pow(2,d*(k-1));
-  int D = pow(2,k);
-  int Lu = pow(2,k-1);
+  int Nc = 2*std::pow(2,d*(k-1));
+  int D = std::pow(2,k);
+  int Lu = std::pow(2,k-1);
   printfQuda("Number of colors for hierarchical probing is %d\n",Nc);
   printfQuda("Distance of neigbors is %d\n",D);
   printfQuda("The extent of the symmetric color unit block is %d\n",Lu);

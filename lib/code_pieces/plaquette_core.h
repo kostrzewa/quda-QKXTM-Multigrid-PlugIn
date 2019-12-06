@@ -179,7 +179,7 @@ if (sid < c_threads){
  }
 
 __syncthreads(); // synchronize threads to be sure that all have written their register trace to share memory
-// for reduction threads per block must be std::power of 2 ( this is always my case)
+// for reduction threads per block must be power of 2 ( this is always my case)
 int i = blockDim.x/2;
 
 while (i != 0){

@@ -223,7 +223,6 @@ find_package(PythonInterp)
 
 find_package(CUDAWrapper)
 find_package(CUDALibs)
-message(STATUS ${CUDA_cublas_LIBRARY})
 
 
 #######################################################################

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+qkxtm_src=$HOME/code/2019_12_04/quda-QKXTM-Multigrid-plugin-NoDer
+source ${qkxtm_src}/build_PizDaint_2019_12_04/PizDaint_load_modules_hdf5-parallel.sh
+
+cmake -DGIT_EXECUTABLE=/usr/bin/git \
+  -DCMAKE_C_COMPILER=cc \
+  -DCMAKE_CXX_COMPILER=CC \
+  -DCMAKE_CXX_FLAGS="-Wno-narrowing" \
+  -DCMAKE_BUILD_TYPE=DEVEL \
+  -DCMAKE_CUDA_COMPILER=/opt/nvidia/cudatoolkit10/10.1.105_3.27-7.0.1.1_4.1__ga311ce7/bin/nvcc \
+  -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cudatoolkit10/10.1.105_3.27-7.0.1.1_4.1__ga311ce7/ \
+  -DQKXTM_QUDA_HOME=/project/s982/bartek/code/2019_12_04/quda_for_plugin \
+  -DQKXTM_2FLAVMG=ON \
+  -DQKXTM_ARPACK=ON \
+  -DQKXTM_HDF5HOME=/opt/cray/pe/hdf5-parallel/1.10.5.1/GNU/8.2 \
+  -DQKXTM_HDF5_LIB=/opt/cray/pe/hdf5-parallel/1.10.5.1/GNU/8.2/lib/libhdf5_parallel_gnu_82.a \
+  -DQKXTM_ARPACK_LIB=/project/s982/gasbarro/build_dependencies/dependencies/gnu/lib/libarpack.a \
+  -DQKXTM_GSLHOME=/apps/daint/UES/jenkins/6.0.UP07/gpu/easybuild/software/GSL/2.5-CrayGNU-18.08 \
+  -DQKXTM_GSL_LIB=/apps/daint/UES/jenkins/6.0.UP07/gpu/easybuild/software/GSL/2.5-CrayGNU-18.08/lib/libgsl.a \
+  -DQKXTM_LIMEHOME=/project/s982/gasbarro/build_dependencies/dependencies/gnu \
+  -DQKXTM_LIME_LIB=/project/s982/gasbarro/build_dependencies/dependencies/gnu/lib/liblime.a \
+  -DQKXTM_PARPACK_LIB=/project/s982/gasbarro/build_dependencies/dependencies/gnu/lib/libparpack.a \
+  -DQKXTM_OPENBLAS=ON \
+  -DQKXTM_OPENBLASHOME=/project/s982/gasbarro/build_dependencies/dependencies/OpenBLAS \
+  -DQKXTM_OPENBLAS_GOMP=/opt/gcc/8.3.0/snos/lib64/libgomp.so \
+  -DQKXTM_OPENBLAS_LIB=/project/s982/gasbarro/build_dependencies/dependencies/OpenBLAS/libopenblas.a \
+  -DQKXTM_OPENBLAS_LIBDIR=/project/s982/gasbarro/build_dependencies/dependencies/OpenBLAS \
+  -DQKXTM_MKL=OFF \
+  -DQUDA_ARPACK=OFF \
+  -DQUDA_BLOCKSOLVER=OFF \
+  -DQUDA_CONTRACT=ON \
+  -DQUDA_DEFLATEDSOLVER=OFF \
+  -DQUDA_DIRAC_CLOVER=ON \
+  -DQUDA_DIRAC_DOMAIN_WALL=OFF \
+  -DQUDA_DIRAC_NDEG_TWISTED_MASS=OFF \
+  -DQUDA_DIRAC_STAGGERED=OFF \
+  -DQUDA_DIRAC_TWISTED_CLOVER=ON \
+  -DQUDA_DIRAC_TWISTED_MASS=ON \
+  -DQUDA_DIRAC_WILSON=ON \
+  -DQUDA_DOWNLOAD_EIGEN=ON \
+  -DQUDA_DYNAMIC_CLOVER=OFF \
+  -DQUDA_FORCE_ASQTAD=OFF \
+  -DQUDA_FORCE_GAUGE=OFF \
+  -DQUDA_FORCE_HISQ=OFF \
+  -DQUDA_GAUGE_ALG=OFF \
+  -DQUDA_GAUGE_TOOLS=OFF \
+  -DQUDA_GPU_ARCH=sm_60 \
+  -DQUDA_INTERFACE_BQCD=OFF \
+  -DQUDA_INTERFACE_CPS=OFF \
+  -DQUDA_INTERFACE_MILC=ON \
+  -DQUDA_INTERFACE_QDP=ON \
+  -DQUDA_INTERFACE_QDPJIT=OFF \
+  -DQUDA_INTERFACE_TIFR=OFF \
+  -DQUDA_LINK_ASQTAD=OFF \
+  -DQUDA_LINK_HISQ=OFF \
+  -DQUDA_MAGMA=OFF \
+  -DQUDA_MPI=ON \
+  -DQUDA_MULTIGRID=ON \
+  -DQUDA_POSIX_THREADS=OFF \
+  -DQUDA_QDPJIT=OFF \
+  -DQUDA_QIO=OFF \
+  -DQUDA_QMP=OFF \
+  ${qkxtm_src}
